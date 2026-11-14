@@ -1,0 +1,83 @@
+name: Build Windows app
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'windows/**'
+      - '.github/workflows/build-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: windows
+        shell: bash
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: windows/package-lock.json
+
+      - name: Install the exact dependency versions from the lock file
+        run: npm ci
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
+      - name: Run the tests
+        run: npm test
+
+      - name: Build installer + portable app
+        run: npm run dist
+
+      - name: Live check of the built app
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD 'dist/win-unpacked/NPTEL Library.exe'
+          $out = Join-Path $PWD 'selftest-result.json'
+          $p = Start-Process -FilePath $exe -ArgumentList '--selftest', "--selftest-out=$out" -PassThru
+          if (-not $p.WaitForExit(240000)) { $p.Kill(); Write-Host 'The live check timed out.' }
+          if (Test-Path $out) {
+            Get-Content $out
+            Add-Content $env:GITHUB_STEP_SUMMARY '### Live check of the built app (real YouTube)'
+            Add-Content $env:GITHUB_STEP_SUMMARY '```json'
+            Add-Content $env:GITHUB_STEP_SUMMARY (Get-Content $out -Raw)
+            Add-Content $env:GITHUB_STEP_SUMMARY '```'
+          } else {
+            Write-Host 'No result file was written.'
+          }
+
+      - name: Upload the installer and the portable app
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: NPTEL-Library-Windows
+          path: |
+            windows/dist/NPTEL-Library-Setup-*.exe
+            windows/dist/NPTEL-Library-Portable-*.exe
+          if-no-files-found: error
+
+      - name: Upload the live-check report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: live-check-report
+          path: windows/selftest-result.json
+          if-no-files-found: ignore
