@@ -14,7 +14,7 @@ test('the bundled page is complete and self-contained', () => {
   const m = html.match(/<script>([\s\S]*)<\/script>/);
   assert.ok(m, 'one inline script');
   assert.doesNotThrow(() => new Function(m[1]), 'script parses');
-  const courses = /var COURSES = (\[[\s\S]*?\]);\n/.exec(m[1]);
+    const courses = /var COURSES = (\[[\s\S]*?\]);\r?\n/.exec(m[1]);
   assert.ok(courses, 'course list present');
   const list = JSON.parse(courses[1].replace(/<\\\//g, '</'));
   assert.strictEqual(list.length, 529);
