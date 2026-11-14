@@ -1,0 +1,84 @@
+{
+  "name": "nptel-library",
+  "productName": "NPTEL Library",
+  "version": "2.1.1",
+  "description": "NPTEL Library for Windows: every NPTEL course, organised by subject, with bookmarks.",
+  "main": "main.js",
+  "private": true,
+  "license": "UNLICENSED",
+  "author": "NPTEL Library",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test \"test/unit/*.test.js\"",
+    "selftest": "electron . --selftest",
+    "dist": "electron-builder --win --x64 --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.3.2",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.coursehub.nptel.desktop",
+    "productName": "NPTEL Library",
+    "copyright": "NPTEL Library",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "lib/**/*.js",
+      "src/index.html",
+      "package.json"
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "electronLanguages": [
+      "en-US"
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NPTEL Library",
+      "deleteAppDataOnUninstall": false,
+      "runAfterFinish": true,
+      "artifactName": "NPTEL-Library-Setup-${version}.${ext}"
+    },
+    "portable": {
+      "artifactName": "NPTEL-Library-Portable-${version}.${ext}"
+    },
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true,
+      "grantFileProtocolExtraPrivileges": false
+    },
+    "compression": "maximum"
+  },
+  "overrides": {
+    "minimatch@>=7 <11.0.1": "11.0.8"
+  }
+}
